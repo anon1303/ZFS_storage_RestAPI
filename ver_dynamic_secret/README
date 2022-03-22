@@ -1,0 +1,73 @@
+
+https://chrisedrego.medium.com/hashicorp-vault-101-dynamic-mysql-credentials-using-vault-702b7da382ef
+https://stackoverflow.com/questions/24566453/resetting-mysql-root-password-with-xampp-on-localhost
+https://www.youtube.com/watch?v=91FtfTTKReM
+https://www.vaultproject.io/docs/secrets/databases/mysql-maria
+
+VAULT
+
+vault server -dev
+export VAULT_ADDR='http://127.0.0.1:8200'
+export VAULT_TOKEN="<TOKEN>"
+
+# Enable Generic Database 
+vault secrets enable database
+
+# Configure Database for MYSQL configuration
+vault write database/config/mysql-db \
+plugin_name=mysql-database-plugin \
+connection_url="{{username}}:{{password}}@tcp(localhost:3306)/" \     
+allowed_roles="*" \
+username='spring' \     
+password='password' \
+default_ttl="1h" \
+max_ttl="386h"
+
+# Configure Roles to create Dynamic users
+vault write database/roles/mysql-db-role db_name=mysql-db creation_statements="CREATE USER '{{name}}'localhost'%' IDENTIFIED BY '{{password}}';GRANT SELECT ON *.* TO '{{name}}'localhost'%';" default_ttl="1h" max_ttl="386h"
+
+role staments:
+CREATE USER '{{name}}'@'localhost' IDENTIFIED BY '{{password}}';
+GRANT ALL ON *.* To 'spring'@'localhost' IDENTIFIED BY 'password';
+GRANT SELECT ON *.* TO '{{name}}'@'localhost';
+GRANT ALL PRIVILEGES ON *.* TO '{{username}}'@'localhost';
+
+------------------------------------------------------------------------------------------------------------
+MYSQL
+
+
+
+install xampp
+start mysql database
+
+~Create user to be used for vault
+CREATE USER 'vault'@'%' IDENTIFIED BY 'vault';
+GRANT ALL PRIVILEGES ON *.* TO 'spring' WITH GRANT OPTION;
+
+
+Configure mysql database:
+Steps:
+
+~ Open your phpMyadmin dashboard
+~ go to user accounts
+~ on the user section Get the root user and click [ Edit privileges ]
+~ in the top section you will find change password button [ click on it ]
+~ make a good pass and fill 2 pass field .
+~ now hit the Go button.
+~ now open your xampp dir ( c:/xampp ) --> 8 . to phpMyadmin dir [C:\xampp\phpMyAdmin]
+
+~ open [ config.inc.php ] file with any text editor
+~ find [ $cfg['Servers'][$i]['auth_type'] = 'config'; ]line and replace 'config' to ‘cookie’
+
+~ go to [ $cfg['Servers'][$i]['AllowNoPassword'] = true; ] this line change ‘true’ to ‘false’.
+~ save the file .
+
+create role:
+
+~ mysql -u root -p
+~ create role my_role;
+~ grant select on <table>.* to my_role;
+~ create user 'root'@'localhost' identified by 'password';
+~ grant my_role to 'root'@'localhost'
+~ select current_role();
+~ set role my_role;
